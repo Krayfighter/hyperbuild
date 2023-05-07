@@ -1,0 +1,25 @@
+
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hyperbuild"
+version = "0.0.0"
+authors = [
+    {name = "Aiden J. Kring", email = "aidenjkring@gmail.com"}
+]
+description = "simple intuitive extendable build system across languages"
+readme = "README.md"
+# license = "LICENSE"
+dependencies = [
+    # "requests",
+    # 'importlib-metadata; python_version<"3.8"',
+]
+
+[project.scripts]
+hyperbuild = "hyperbuild:build_entry_point"
+
+# [tool.setuptools.package-dir]
+# hyperbuild = "src/"
