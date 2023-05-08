@@ -62,6 +62,8 @@ class Project:
                     build_target.set_build_dir(self.binary_dir + value)
                 case "src_files":
                     build_target.add_source_files(value)
+                case "include_dirs":
+                    build_target.add_include_dirs(value)
                 case _:
                     raise RuntimeError("invalid copmile target option: " + key)
         
@@ -148,7 +150,7 @@ def gcc_compiler_command(
     srcs = ' '.join(src_files)
     cmpflags = ' '.join(compiler_flags)
     linkd = ' '.join(link_dirs)
-    incld = ' '.join(include_dirs)
+    incld = '-L' + ';'.join(include_dirs) + ' '
     
     # c_or_cpp = None
     # if srcs[0].endswith(['.cpp', '.cxx']):

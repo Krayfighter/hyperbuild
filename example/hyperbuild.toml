@@ -7,8 +7,9 @@ binary_dir = "example/build/"
 [target]
 name = "main"
 build_dir = "main/"
-src_files = ["example/test.cpp"]
+src_files = ["example/main.cpp", "example/helper.cpp"]
 type = {bin_type = "exec", run_type = "main"}
 deps = {}
+include_dirs = ["example/"]
 # deps = ["testC"]
 
