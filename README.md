@@ -18,12 +18,14 @@ python -m venv .venv
       
 ##### .venv\Scripts\activate` on Windows
 
-pip install --editable .
+`pip install --editable .`
 
-<!-- 
-<!--  -->
- <!-- --> -->
+then just run
 
-<!-- # Now you have access to your package -->
-<!-- # as if it was installed in .venv -->
-python -c "import your_python_project"
+`hyperbuild`
+
+to build or
+
+`hyperbuild -r True`
+
+to build and run
