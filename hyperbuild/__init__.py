@@ -9,6 +9,7 @@ import hyperbuild.target_types as target_types
 import hyperbuild.utils as utils
 
 def build_entry_point() -> None:
+    os.system('clear')
     parser = argparse.ArgumentParser(
         prog="hyperbuild",
         description="good build system (hopefully)",
@@ -26,5 +27,6 @@ def build_entry_point() -> None:
     # print(project)
     project.build()
     if args.run:
-        os.system(project.target_tree['main']['builder'].build_dir + "/main")
+        # TODO change this to be dynamic, currently is a static dir
+        os.system(project.targets['main']['builder'].build_dir + "/main")
     return
