@@ -4,12 +4,17 @@
 name = "test"
 binary_dir = "example/build/"
 
-[target]
-name = "main"
-build_dir = "main/"
-src_files = ["example/main.cpp", "example/helper.cpp"]
-type = {bin_type = "exec", run_type = "main"}
-deps = {}
-include_dirs = ["example/"]
-# deps = ["testC"]
+[target.main]
+# name = "main"
+build_dir = "main/" # might be required
+src_files = ["example/main.cpp", "example/helper.cpp"] # required
+type = "root" # required
+deps = ["printlib"] # not required
+include_dirs = ["example/"] # not required
 
+
+[target.printlib]
+build_dir = "printlib/"
+src_files = ["example/printlib/lib.cpp"]
+include_dirs = ["example/printlib/"]
+type = "dep"
