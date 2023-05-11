@@ -1,77 +1,11 @@
+
+
 # from ctypes import c_char
 import os
 
-# import hyperbuild.toolchains as toolchains
+import enum
+import typing
 
-target_type = {
-    "executable": 1,
-    "static_library": 2,
-    "dynamic_library": 3
-}
-
-# class defining a full project with possibly multiple different targets
-class Project:
-    def __init__(self, config: dict):
-        self.name = config['project']['name']
-        # self.binary_dir = os.path.join(os.getcwd(), config['project']['binary_dir'])
-        self.set_binary_dir(config['project']['binary_dir'])
-        self.add_target(config['target'])
-    
-    def set_binary_dir(self, path: str):
-        if not os.path.isdir(path):
-            os.system('mkdir ' + path)
-            # raise RuntimeError("binary does not exists for project")
-        self.binary_dir = path
-    
-    # def add_target(target, dependencies = []):
-    #     pass
-    
-    def build(self):
-        self.target_tree['main']['builder'].build()
-    
-    def add_target(self, target_config: dict):
-    
-        build_target = None
-        
-        # handle build tree integration
-        if target_config['name'] == None:
-            print("no name founr")
-            raise RuntimeError()
-        else:
-            # create the outline of the target in the tree
-            self.target_tree[target_config['name']] = {
-                "type": target_config['type'],
-                "deps": target_config['deps'],
-                "builder": None
-            }
-            build_target = BuildTarget(target_config['name'], gcc_compiler_command)
-        
-        # search the keys in the target config
-        for (key, value) in target_config.items():
-            match key:
-                case "name":
-                    pass
-                case "type":
-                    pass
-                case "deps":
-                    pass
-                    # build_target.set_target_name(value)
-                # case "toolchain":
-                #     raise NotImplementedError
-                case "build_dir":
-                    build_target.set_build_dir(self.binary_dir + value)
-                case "src_files":
-                    build_target.add_source_files(value)
-                case "include_dirs":
-                    build_target.add_include_dirs(value)
-                case _:
-                    raise RuntimeError("invalid copmile target option: " + key)
-        
-        # print(dir(build_target))
-        self.target_tree[target_config['name']]['builder'] = build_target
-    
-    binary_dir: str = ""
-    target_tree: dict = {}
 
 # create a target to compile
 class BuildTarget:
@@ -80,8 +14,9 @@ class BuildTarget:
         # self.target_name = target_name
         self.target_name = target_name
         self.build_command = build_command
+        # self.src_files = []
         # compiler
-        pass
+        # pass
     
     def build(self):
         self.build_command (
@@ -122,15 +57,15 @@ class BuildTarget:
         self.compiler_flags.extend(flags)
     
     # needs change
-    def set_build_dir(self, path: str, mkdir_if_not_exists = True):
+    def set_build_dir(self, path: str):
         self.build_dir = path
         
     
     target_name: str = ""
-    src_files: list[str] = list()
-    include_dirs: list[str] = list()
-    link_dirs: list[str] = list()
-    compiler_flags: list[str] = list()
+    src_files: list[str] = []
+    include_dirs: list[str] = []
+    link_dirs: list[str] = []
+    compiler_flags: list[str] = []
     # compiler: toolchains.Compiler
     build_dir: os.PathLike = ""
     build_command: callable = None
@@ -150,12 +85,17 @@ def gcc_compiler_command(
     srcs = ' '.join(src_files)
     cmpflags = ' '.join(compiler_flags)
     linkd = ' '.join(link_dirs)
-    incld = '-L' + ';'.join(include_dirs) + ' '
+    incld = '-I' + ' -I'.join(include_dirs) + ' '
     
-    # c_or_cpp = None
-    # if srcs[0].endswith(['.cpp', '.cxx']):
-    #     c_or_cpp = 'g++'
-    # else
+    print(build_dir)
+    print(target_name)
+    
+    # if 
+    print('------------------')
+    print(srcs)
+    print(cmpflags)
+    print(linkd)
+    print(incld)
     
     command = ' '.join(["g++", srcs, cmpflags, linkd, incld]) + '-o ' + build_dir + target_name
     
@@ -164,13 +104,148 @@ def gcc_compiler_command(
     os.system(command)
     
 
+# might end up deprecating aat some point
 GCC_Compiler = BuildTarget(
     "gcc",
     gcc_compiler_command 
 )
 
 
+class enum_target_types(enum.Enum):
+    TARGET_ROOT = 1
+    TARGET_DEP = 2
 
-# GCC_Compiler: toolchains.Compiler = toolchains.Compiler("gcc")
+
+class target_t(typing.TypedDict):
+    name: str
+    builder: BuildTarget
+    target_type: enum_target_types
+    dependencies: list[str] # the string should be valid defined target name
+
+
+
+# class defining a full project with possibly multiple different targets
+class Project:
+    def __init__(self, config: dict):
+        self.name = config['project']['name']
+        self.set_binary_dir(config['project']['binary_dir'])
+        self.parse_targets(config['target'])
+        # print(self.targets)
+        # self.resolve_deps(config['deps'], self.target_tree)
+    
+    def set_binary_dir(self, path: str):
+        if not os.path.isdir(path):
+            os.system('mkdir ' + path)
+            # raise RuntimeError("binary dTARGET_ROOToes not exists for project")
+        self.binary_dir = path
+    
+    # def add_target(target, dependencies = []):
+    #     pass
+    
+    def build(self):
+        # self.target_tree['main']['builder'].build()
+        # print(type(self.targets))
+        # print(self.targets)
+        for name, target in self.targets.items():
+            # print(target)
+            if target['target_type'] == enum_target_types.TARGET_ROOT:
+                for dep in target['dependencies']:
+                    self.build_deps(target, dep)
+                target['builder'].build()
+            else:
+                pass
+    
+    # this function may recurse as to cover a chain or tree of dependencies
+    def build_deps(self, dependant: target_t, dependency: str):
+        if dependency not in self.built_targets:
+            print(dependency)
+            if self.targets[dependency]['dependencies'] == []:
+                self.targets[dependency]['builder'].build()
+            else:
+                for dep in self.targets[dependency]['deps']:
+                    self.build_deps(dependency, self.targets['dep'])
+        else:
+            pass
+        # TODO add deps build dirs to the link dirs of the dependant
+    
+    
+    def parse_targets(self, target_config: dict):
+        
+        for targ_name, targ_cfg in target_config.items():
+            build_target = BuildTarget(targ_name, gcc_compiler_command)
+            print(targ_name)
+            print('src files')
+            print(build_target.src_files)
+            print(targ_cfg)
+            target_type = None
+            deps = None
+            
+            # get necessary tags
+            # Here means the target_type must be valid type
+            if targ_cfg['type'] == 'root':
+                target_type = enum_target_types.TARGET_ROOT
+            elif targ_cfg['type'] == 'dep':
+                target_type = enum_target_types.TARGET_DEP
+            else:
+                raise RuntimeError("unsupported target type: " + value['type'])
+
+            # try to get deps
+            # Here means deps must be valid type
+            try:
+                deps = targ_cfg['deps']
+            except:
+                deps = []
+            
+            # search the keys in the target config
+            # WARNING this may pass but let an invalid structer be returned
+            # on second thought that might not be the case, this should be checked and possibly fixed later
+            for (key, value) in targ_cfg.items():
+                match key:
+                    case "type":
+                        pass
+                    case "deps":
+                        pass
+                    case "build_dir":
+                        build_target.set_build_dir(self.binary_dir + value)
+                    case "src_files":
+                        build_target.add_source_files(value)
+                    case "include_dirs":
+                        build_target.add_include_dirs(value)
+                    case _:
+                        raise RuntimeError("invalid copmile target option: " + key)
+            
+            # add the current configs to the self.targets list aas a new target (should be enforced as valid at runtime)
+            self.targets[targ_name] = target_t (
+                name = targ_name,
+                builder = build_target,
+                target_type = target_type,
+                dependencies = deps
+            )
+            
+            print(targ_name)
+            print('src files')
+            print(build_target.src_files)
+            print(targ_cfg)
+            
+            # build_target = None
+            
+            # print('-----------------------')
+            # print(self.targets)
+            # print(self.targets[targ_name])
+            # print(self.targets[targ_name]['builder'].src_files)
+    
+    def resolve_deps(self, deps: dict, target: dict):
+        if target['deps'] != []:
+            for dep in deps:
+                pass
+                # check if dep has deps
+                    # recurse if so
+                # else create a new build target for dep and 
+    
+    binary_dir: str = ""
+    targets: dict[str: target_t] = {}
+    built_targets: list[str] = []
+    # targets: list[target_t] = []
+    # built_targets: list[target_t] = []
 
 
